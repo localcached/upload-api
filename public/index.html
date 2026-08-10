@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container { max-width: 640px; width: 100%; padding: 2rem; }
+    h1 { font-size: 2rem; margin-bottom: 1.5rem; text-align: center; }
+    .upload-area {
+      border: 2px dashed #333;
+      border-radius: 12px;
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #111122;
+    }
+    .upload-area:hover { border-color: #0070f3; background: #151528; }
+    .upload-area.dragover { border-color: #0070f3; background: #151528; }
+    #file-input { display: none; }
+    .result {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #111122;
+      border-radius: 8px;
+      word-break: break-all;
+    }
+    .result a { color: #00aaff; }
+    .status { color: #888; font-size: 0.9rem; margin-top: 0.5rem; }
+    .copy-btn {
+      background: #0070f3;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-left: 0.5rem;
+    }
+    .copy-btn:hover { background: #0061d3; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Simple File Upload</h1>
+    <label for="file-input" class="upload-area" id="drop-area">
+      <p>Drop a file here or click to select</p>
+    </label>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const result = document.getElementById('result');
+
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.classList.add('dragover');
+    });
+    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied!');
+      }).catch(() => {
+        alert('Copy failed');
+      });
+    }
+
+    async function handleFile(file) {
+      result.innerHTML = '<div class="status">Uploading ' + file.name + '...</div>';
+
+      try {
+        const response = await fetch('/api/upload?filename=' + encodeURIComponent(file.name), {
+          method: 'POST',
+          body: await file.arrayBuffer(),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          result.innerHTML =
+            '<div class="status">Uploaded!</div>' +
+            '<div><a href="' + data.url + '" target="_blank">' + data.url +
+            '</a><button class="copy-btn" onclick="copyToClipboard(\'' + data.url + '\')">Copy</button></div>' +
+            '<div class="status">Size: ' + (data.size / 1024).toFixed(1) + ' KB</div>';
+        } else {
+          result.innerHTML = '<div class="status">Error: ' + (data.error || 'Unknown') + '</div>';
+        }
+      } catch (e) {
+        result.innerHTML = '<div class="status">Error: ' + e.message + '</div>';
+      }
+    }
+  </script>
+</body>
+</html>
