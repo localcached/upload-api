@@ -34,7 +34,7 @@ function buildMultipart(boundary, fields, filename, buffer) {
   parts.push(Buffer.from(`--${boundary}\r\n`));
   parts.push(
     Buffer.from(
-      `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n`
+      `Content-Disposition: form-data; name="fileToUpload"; filename="${filename}"\r\n`
     )
   );
   parts.push(Buffer.from('Content-Type: application/octet-stream\r\n\r\n'));
